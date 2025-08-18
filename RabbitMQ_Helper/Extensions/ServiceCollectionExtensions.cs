@@ -1,8 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RabbitMQ_Helper.Consumer;
 using System;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,10 +15,12 @@ namespace RabbitMQ_Helper
 		/// <summary>
 		/// 添加 RabbitMQ Producer 服务
 		/// </summary>
-		public static IServiceCollection AddRabbitMQProducer(this IServiceCollection services, Action<RabbitMQConfig> configure)
+		public static IServiceCollection AddRabbitMQ(this IServiceCollection services, IConfiguration configuration, string sectionName = "RabbitMQ")
 		{
-			var config = new RabbitMQConfig();
-			configure(config);
+			RabbitMQConfig config = configuration.GetSection(sectionName).Get<RabbitMQConfig>()
+			?? throw new InvalidOperationException($"找不到配置节点: {sectionName}");
+
+			ValidateConfig(config);
 
 			services.AddSingleton(config);
 			services.AddSingleton<IRabbitMQInitializer, RabbitMQInitializer>();
@@ -28,7 +32,21 @@ namespace RabbitMQ_Helper
 
 			return services;
 		}
+
+		private static void ValidateConfig(RabbitMQConfig config)
+		{
+			if (string.IsNullOrEmpty(config.HostName))
+				throw new ArgumentException("HostName 不能为空");
+			if (config.Port <= 0 || config.Port > 65535)
+				throw new ArgumentException("Port 必须在 1-65535 之间");
+			if (string.IsNullOrEmpty(config.UserName))
+				throw new ArgumentException("UserName 不能为空");
+			if (string.IsNullOrEmpty(config.Password))
+				throw new ArgumentException("Password 不能为空");
+		}
 	}
+
+
 
 	/// <summary>
 	/// 后台服务：在应用启动时初始化 Producer

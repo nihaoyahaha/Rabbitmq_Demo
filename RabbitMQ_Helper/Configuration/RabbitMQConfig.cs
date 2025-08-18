@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace RabbitMQ_Helper
 {
-    public  class RabbitMQConfig
+    internal class RabbitMQConfig
     {
 		public RabbitMQConfig() { }
 		public string HostName { get; set; }
