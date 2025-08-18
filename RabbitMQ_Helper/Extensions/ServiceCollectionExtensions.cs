@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using RabbitMQ_Helper.Consumer;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,7 +19,9 @@ namespace RabbitMQ_Helper
 			configure(config);
 
 			services.AddSingleton(config);
+			services.AddSingleton<IRabbitMQInitializer, RabbitMQInitializer>();
 			services.AddSingleton<IRabbitMQProducer, RabbitMQProducer>();
+			services.AddSingleton<IRabbitMQConsumer, EventingBasicConsumer>();
 
 			// 注册为 IHostedService，应用启动时自动初始化
 			services.AddHostedService<RabbitMQProducerHostedService>();
@@ -32,12 +35,12 @@ namespace RabbitMQ_Helper
 	/// </summary>
 	internal class RabbitMQProducerHostedService : IHostedService
 	{
-		private readonly IRabbitMQProducer _producer;
+		private readonly IRabbitMQInitializer _initializer;
 		private readonly ILogger<RabbitMQProducerHostedService> _logger;
 
-		public RabbitMQProducerHostedService(IRabbitMQProducer producer, ILogger<RabbitMQProducerHostedService> logger)
+		public RabbitMQProducerHostedService(IRabbitMQInitializer initializer, ILogger<RabbitMQProducerHostedService> logger)
 		{
-			_producer = producer;
+			_initializer = initializer;
 			_logger = logger;
 		}
 
@@ -45,11 +48,12 @@ namespace RabbitMQ_Helper
 		{
 			try
 			{
-				await _producer.InitializeAsync();
+				await _initializer.InitializeAsync();
+				_logger.LogInformation("RabbitMQ 初始化成功!");
 			}
 			catch (Exception ex)
 			{
-				_logger.LogError(ex, "RabbitMQ Producer 启动失败");
+				_logger.LogError(ex, "RabbitMQ 初始化失败!");
 				throw;
 			}
 		}

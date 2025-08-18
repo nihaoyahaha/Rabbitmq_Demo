@@ -1,0 +1,104 @@
+﻿using Microsoft.Extensions.Logging;
+using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading.Channels;
+using System.Threading.Tasks;
+
+namespace RabbitMQ_Helper
+{
+	internal class RabbitMQProducer : IRabbitMQProducer
+	{
+		private readonly ILogger<RabbitMQProducer> _logger;
+		private readonly IRabbitMQInitializer _rabbitInitializer;
+		private readonly IChannel _channel;
+		
+		//消息的“身份证”和“说明书”（属性）
+		private BasicProperties _props;
+		public RabbitMQProducer(ILogger<RabbitMQProducer> logger, IRabbitMQInitializer rabbitInitializer)
+		{
+			_logger = logger;
+			_rabbitInitializer = rabbitInitializer;
+			_channel = rabbitInitializer.Channel;
+
+			var consumer = new AsyncEventingBasicConsumer(_channel);
+			consumer.ReceivedAsync += (a, b) => { return null; };
+		}
+
+		
+		//消息先到交换机，再按绑定规则投递。绑定在哪台交换机，就必须把消息发给那台交换机
+		public async Task PublishAsync(string message, string routingKey, string messageId = null)
+		{
+			if (string.IsNullOrEmpty(message))
+				throw new ArgumentException("消息不能为空", nameof(message));
+
+			if (_channel == null || !_channel.IsOpen)
+			{
+				_logger.LogWarning("通道未打开，尝试重新初始化...");
+				await _rabbitInitializer.InitializeAsync(); // 简单重试
+			}
+
+			try
+			{
+				//消息体 → 就是你要传的内容（必须是 byte[]）
+				byte[] messageBodyBytes = Encoding.UTF8.GetBytes(message);
+				/*
+			      设置消息属性 IBasicProperties
+			      BasicProperties 是消息的“元数据”，就像快递包裹上的标签。
+			      属性	                作用	                      示例
+                  ContentType	     消息内容类型	      "text/plain", "application/json"
+                  DeliveryMode	     是否持久化	      2 = 持久化，1 = 非持久化
+                  MessageId	         消息唯一 ID	      用于去重
+                  Timestamp	         时间戳	          记录发送时间
+                  Expiration	     过期时间（毫秒）	  "3600000" = 1小时
+                  Headers	         自定义键值对	      地理位置、用户ID等
+                  ReplyTo	         回复地址	          用于“请求-响应”模式
+                  CorrelationId	     关联 ID    	      跟踪一次调用链
+			   */
+				//消息的“身份证”和“说明书”（属性）
+				_props = new BasicProperties();
+				_props.ContentType = "text/plain";
+
+				//发一个“持久化”的消息
+				_props.DeliveryMode = DeliveryModes.Persistent;// ⭐1:不持久化 2:持久化  持久化: 即使 RabbitMQ 重启，消息也不丢
+
+				//唯一ID
+				_props.MessageId = messageId ?? Guid.NewGuid().ToString();
+
+				//发送时间
+				_props.Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+
+				//设置消息过期时间（TTL）单位:毫秒,1分钟 = 60000毫秒
+				//_props.Expiration = "60000"; // 1分钟过期
+
+				//发消息带“自定义头”（Headers）
+				_props.Headers = new Dictionary<string, object>() {
+				    { "latitude", 51.5252949 },
+				    {"longitude", -0.0905493 },
+				    { "userId", "user123"},
+				    { "priority", 10} 
+				};
+
+				await _channel.BasicPublishAsync(
+					exchange: _rabbitInitializer.ExchangeName,
+					routingKey: routingKey,
+					mandatory: true,// ⚠️ 强制投递  false（默认）：消息发出去就不管了、true：必须成功投递到至少一个队列，否则触发 Return 事件
+					basicProperties: _props,
+					body: messageBodyBytes);
+
+				_logger.LogInformation("消息已发布: RoutingKey='{RoutingKey}', MessageId='{MessageId}'", routingKey, _props.MessageId);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "发送消息失败: {Message}", ex.Message);
+				throw;
+			}
+		}
+
+
+
+		
+	}
+}

@@ -8,7 +8,6 @@ namespace RabbitMQ_Helper
 {
     public interface IRabbitMQProducer
 	{
-		Task InitializeAsync();
 		Task PublishAsync(string message, string routingKey, string messageId = null);
 	}
 }
