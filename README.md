@@ -1,1 +1,1 @@
-rabbitmq 生产消息的简单demo
+在winform项目中通过依赖注入的方式使用rabbitmq的简单demo
