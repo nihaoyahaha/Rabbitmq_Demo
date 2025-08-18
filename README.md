@@ -1,0 +1,1 @@
+rabbitmq 生产消息的简单demo
