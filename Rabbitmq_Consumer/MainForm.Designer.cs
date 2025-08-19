@@ -28,23 +28,55 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-			this.txt_Messages = new System.Windows.Forms.TextBox();
+			this.txt_OrderMessages = new System.Windows.Forms.TextBox();
+			this.label1 = new System.Windows.Forms.Label();
+			this.txt_InventoryMessages = new System.Windows.Forms.TextBox();
+			this.label2 = new System.Windows.Forms.Label();
 			this.SuspendLayout();
 			// 
-			// txt_Messages
+			// txt_OrderMessages
 			// 
-			this.txt_Messages.Location = new System.Drawing.Point(12, 12);
-			this.txt_Messages.Multiline = true;
-			this.txt_Messages.Name = "txt_Messages";
-			this.txt_Messages.Size = new System.Drawing.Size(578, 229);
-			this.txt_Messages.TabIndex = 0;
+			this.txt_OrderMessages.Location = new System.Drawing.Point(12, 53);
+			this.txt_OrderMessages.Multiline = true;
+			this.txt_OrderMessages.Name = "txt_OrderMessages";
+			this.txt_OrderMessages.Size = new System.Drawing.Size(361, 229);
+			this.txt_OrderMessages.TabIndex = 0;
+			// 
+			// label1
+			// 
+			this.label1.AutoSize = true;
+			this.label1.Location = new System.Drawing.Point(13, 35);
+			this.label1.Name = "label1";
+			this.label1.Size = new System.Drawing.Size(101, 12);
+			this.label1.TabIndex = 1;
+			this.label1.Text = "接收订单队列消息";
+			// 
+			// txt_InventoryMessages
+			// 
+			this.txt_InventoryMessages.Location = new System.Drawing.Point(451, 53);
+			this.txt_InventoryMessages.Multiline = true;
+			this.txt_InventoryMessages.Name = "txt_InventoryMessages";
+			this.txt_InventoryMessages.Size = new System.Drawing.Size(361, 229);
+			this.txt_InventoryMessages.TabIndex = 0;
+			// 
+			// label2
+			// 
+			this.label2.AutoSize = true;
+			this.label2.Location = new System.Drawing.Point(452, 35);
+			this.label2.Name = "label2";
+			this.label2.Size = new System.Drawing.Size(101, 12);
+			this.label2.TabIndex = 1;
+			this.label2.Text = "接收库存队列消息";
 			// 
 			// MainForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(602, 450);
-			this.Controls.Add(this.txt_Messages);
+			this.ClientSize = new System.Drawing.Size(835, 450);
+			this.Controls.Add(this.label2);
+			this.Controls.Add(this.txt_InventoryMessages);
+			this.Controls.Add(this.label1);
+			this.Controls.Add(this.txt_OrderMessages);
 			this.Name = "MainForm";
 			this.ShowIcon = false;
 			this.Text = "消息消费者";
@@ -56,7 +88,10 @@
 
 		#endregion
 
-		private System.Windows.Forms.TextBox txt_Messages;
+		private System.Windows.Forms.TextBox txt_OrderMessages;
+		private System.Windows.Forms.Label label1;
+		private System.Windows.Forms.TextBox txt_InventoryMessages;
+		private System.Windows.Forms.Label label2;
 	}
 }
 

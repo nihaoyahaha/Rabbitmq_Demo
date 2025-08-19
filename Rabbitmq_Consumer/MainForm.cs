@@ -9,24 +9,28 @@ using System.Runtime.Remoting.Channels;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Tab;
+
 
 namespace Rabbitmq_Consumer
 {
     public partial class MainForm: Form
     {
-        private readonly IRabbitMQConsumer _consumer;
+        private readonly IRabbitMQConsumer _consumer_order;
+		private readonly IRabbitMQConsumer _consumer_inventory;
 		private List<string> _messages = new List<string>();
-		public MainForm(IRabbitMQConsumer consumer)
+		public MainForm(IRabbitMQConsumer consumer_order, IRabbitMQConsumer consumer_inventory)
 		{
 			InitializeComponent();
-			_consumer = consumer;
-			_consumer.MessageReceived += OnMessageReceivedAsync;
+			_consumer_order = consumer_order;
+			_consumer_inventory = consumer_inventory;
+			_consumer_order.MessageReceived += OnMessageReceivedAsync;
+			_consumer_inventory.MessageReceived += OnMessageReceivedAsync;
 		}
 
 		private async void MainForm_Load(object sender, EventArgs e)
 		{
-			await _consumer.StartConsumingAsync("queue_order");
+			await _consumer_order.StartConsumingAsync("queue_order");
+			await _consumer_inventory.StartConsumingAsync("queue_inventory");
 		}
 
 		private async Task<bool> OnMessageReceivedAsync(byte[] messageBody, ulong deliveryTag)
@@ -35,7 +39,8 @@ namespace Rabbitmq_Consumer
 			try
 			{
 				await Task.Delay(100);
-				SafeUpdateText(txt_Messages,message);
+				SafeUpdateText(txt_OrderMessages,message);
+				SafeUpdateText(txt_InventoryMessages, message);
 				return true;
 			}
 			catch 
