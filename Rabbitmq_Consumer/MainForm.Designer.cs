@@ -28,21 +28,35 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
+			this.txt_Messages = new System.Windows.Forms.TextBox();
 			this.SuspendLayout();
+			// 
+			// txt_Messages
+			// 
+			this.txt_Messages.Location = new System.Drawing.Point(12, 12);
+			this.txt_Messages.Multiline = true;
+			this.txt_Messages.Name = "txt_Messages";
+			this.txt_Messages.Size = new System.Drawing.Size(578, 229);
+			this.txt_Messages.TabIndex = 0;
 			// 
 			// MainForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(602, 450);
+			this.Controls.Add(this.txt_Messages);
 			this.Name = "MainForm";
 			this.ShowIcon = false;
 			this.Text = "消息消费者";
+			this.Load += new System.EventHandler(this.MainForm_Load);
 			this.ResumeLayout(false);
+			this.PerformLayout();
 
 		}
 
 		#endregion
+
+		private System.Windows.Forms.TextBox txt_Messages;
 	}
 }
 

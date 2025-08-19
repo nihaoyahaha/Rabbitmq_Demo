@@ -11,43 +11,66 @@ namespace RabbitMQ_Helper.Consumer
 {
 	internal class EventingBasicConsumer : IRabbitMQConsumer
 	{
-		private readonly ILogger<RabbitMQProducer> _logger;
+		private readonly ILogger<EventingBasicConsumer> _logger;
 		private readonly IChannel _channel;
 		private AsyncEventingBasicConsumer _consumer;
-		private byte[] _body;
 		private string _consumerTag;
-		public EventingBasicConsumer(ILogger<RabbitMQProducer> logger, IRabbitMQInitializer rabbitInitializer)
+
+		public event Func<byte[], ulong, Task<bool>> MessageReceived;
+
+		public EventingBasicConsumer(ILogger<EventingBasicConsumer> logger, IRabbitMQInitializer rabbitInitializer)
 		{
 			_logger = logger;
 			_channel = rabbitInitializer.Channel;
 			_consumer = new AsyncEventingBasicConsumer(_channel);
-			_consumer.ReceivedAsync += ReceivedAsync;
+			_consumer.ReceivedAsync += OnMessageReceivedAsync;
 		}
 
-		private async Task ReceivedAsync(object sender, BasicDeliverEventArgs eventArgs)
+		private async Task OnMessageReceivedAsync(object sender, BasicDeliverEventArgs  eventArgs)
 		{
-			//获取消息体
-			_body = eventArgs.Body.ToArray();
-			_logger.LogInformation("成功获取消息");
-			//处理完消息后，发送确认（ACK）告诉 RabbitMQ：“这条消息我处理完了，可以删除了”
-			await _channel.BasicAckAsync(eventArgs.DeliveryTag, false);
-			_logger.LogInformation("消息处理确认");
+			byte[] body = eventArgs.Body.ToArray();
+			ulong deliveryTag = eventArgs.DeliveryTag;
+			_logger.LogInformation("收到新消息，DeliveryTag: {Tag}", deliveryTag);
+			try
+			{
+				bool success;
+				if (MessageReceived == null) success = await Task.FromResult(false);
+				// 调用客户端事件处理器
+				success = await MessageReceived?.Invoke(body, deliveryTag);
+				if (success)
+				{
+					// 客户端处理成功，ACK
+					await _channel.BasicAckAsync(deliveryTag, false);
+					_logger.LogInformation("消息已确认 (ACK), DeliveryTag: {Tag}", deliveryTag);
+				}
+				else
+				{
+					// 客户端处理失败，NACK（可选择是否重回队列）
+					await _channel.BasicNackAsync(
+						deliveryTag: deliveryTag,
+						multiple: false,
+						requeue: true); // true: 重回队列；false: 进入死信队列
+					_logger.LogWarning("消息处理失败，已 NACK (重回队列), DeliveryTag: {Tag}", deliveryTag);
+				}
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "处理消息时发生异常, DeliveryTag: {Tag}", deliveryTag);
+				await _channel.BasicNackAsync(deliveryTag, multiple: false, requeue: true);
+			}
 		}
-
-		public byte[] GetMessage() => _body;
 
 		//开始监听队列
-		public async Task<string> StartConsumingAsync(string queue)
+		public async Task StartConsumingAsync(string queue)
 		{
 			_logger.LogInformation("正在启动消费者，监听队列: {Queue}", queue);
 
 			_consumerTag = await _channel.BasicConsumeAsync(
-				queue: "my_queue",//要监听的队列名字，这个队列必须已经存在
+				queue: queue,//要监听的队列名字，这个队列必须已经存在
 				autoAck: false,   // 手动确认，确认机制 true:消息一收到，RabbitMQ 就认为“处理完了”，立刻删除,如果程序崩溃，消息就丢了 false:收到消息后，必须手动调用 BasicAck 告诉 RabbitMQ“我处理完了”,安全 ✅，即使程序崩溃，消息会重新投递
 				consumer: _consumer);//消费者对象
 			
 			_logger.LogInformation("消费者已启动，ConsumerTag: {Tag}", _consumerTag);
-			return _consumerTag;
 		}
 
 		//停止监听队列

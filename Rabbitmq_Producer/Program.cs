@@ -49,7 +49,7 @@ namespace Rabbitmq_Producer
 				})
 				.ConfigureServices((context, services) =>
 				{
-					services.AddRabbitMQ(context.Configuration,"RabbitMQ");
+					services.AddRabbitMQ(context.Configuration);
 					services.AddScoped<MainForm>();
 				});
 		}

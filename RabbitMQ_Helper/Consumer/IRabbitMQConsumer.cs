@@ -9,15 +9,15 @@ namespace RabbitMQ_Helper
 {
     public interface IRabbitMQConsumer
 	{
-		//获取消息
-        byte[] GetMessage();
+		//消息接收事件 参数：消息体、DeliveryTag
+		event Func<byte[], ulong, Task<bool>> MessageReceived;
 
 		/// <summary>
 		/// 开始监听队列
 		/// </summary>
 		/// <param name="queue">队列名</param>
 		/// <returns></returns>
-		Task<string> StartConsumingAsync(string queue);
+		Task StartConsumingAsync(string queue);
 
 		/// <summary>
 		/// 停止监听队列

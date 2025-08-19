@@ -10,7 +10,7 @@ namespace RabbitMQ_Helper
 	internal class RabbitMQInitializer : IRabbitMQInitializer
 	{
 		private readonly RabbitMQConfig _config;
-		private readonly ILogger<RabbitMQProducer> _logger;
+		private readonly ILogger<RabbitMQInitializer> _logger;
 
 		private IConnection _connection;
 		public IChannel Channel
@@ -35,7 +35,7 @@ namespace RabbitMQ_Helper
 			get { return _exchange_order; }
 		}
 
-		public RabbitMQInitializer(RabbitMQConfig config, ILogger<RabbitMQProducer> logger)
+		public RabbitMQInitializer(RabbitMQConfig config, ILogger<RabbitMQInitializer> logger)
 		{
 			_config = config;
 			_logger = logger;
