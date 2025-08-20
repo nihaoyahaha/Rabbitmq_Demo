@@ -17,7 +17,7 @@ namespace RabbitMQ_Helper
 		/// </summary>
 		/// <param name="queue">队列名</param>
 		/// <returns></returns>
-		Task StartConsumingAsync(string queue);
+		Task StartConsumingAsync(string queue,string routingKey);
 
 		/// <summary>
 		/// 停止监听队列

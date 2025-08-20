@@ -66,7 +66,7 @@ namespace RabbitMQ_Helper
 		{
 			try
 			{
-				await _initializer.InitializeAsync();
+				await _initializer.CreateConnectionAsync();
 				_logger.LogInformation("RabbitMQ 初始化成功!");
 			}
 			catch (Exception ex)

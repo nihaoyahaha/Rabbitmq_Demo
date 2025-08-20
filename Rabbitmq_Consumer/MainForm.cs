@@ -29,8 +29,8 @@ namespace Rabbitmq_Consumer
 
 		private async void MainForm_Load(object sender, EventArgs e)
 		{
-			await _consumer_order.StartConsumingAsync("queue_order");
-			await _consumer_inventory.StartConsumingAsync("queue_inventory");
+			await _consumer_order.StartConsumingAsync("queue_order", "routingKey_exchange_order - Inventory");
+			await _consumer_inventory.StartConsumingAsync("queue_inventory", "routingKey_exchange_order - Inventory");
 		}
 
 		private async Task<bool> OnMessageReceivedAsync(byte[] messageBody, ulong deliveryTag)
