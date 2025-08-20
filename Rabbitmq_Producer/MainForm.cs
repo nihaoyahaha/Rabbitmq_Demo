@@ -29,8 +29,7 @@ namespace Rabbitmq_Producer
 		{
 			try
 			{
-				await _producer.PublishAsync(txt_Message.Text, "routingKey_exchange_order-Inventory");
-				MessageBox.Show("消息发送成功！");
+				await _producer.PublishAsync($"[{DateTime.Now .ToString("yyyy/MM/dd HH:mm:ss")}]{txt_Message.Text}", "routingKey_exchange_order-Inventory");
 			}
 			catch (Exception ex)
 			{

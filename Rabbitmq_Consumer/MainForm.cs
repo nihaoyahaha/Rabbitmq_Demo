@@ -23,8 +23,8 @@ namespace Rabbitmq_Consumer
 			InitializeComponent();
 			_consumer_order = consumer_order;
 			_consumer_inventory = consumer_inventory;
-			_consumer_order.MessageReceived += OnMessageReceivedAsync;
-			_consumer_inventory.MessageReceived += OnMessageReceivedAsync;
+			_consumer_order.MessageReceived += OnOrderMessageReceivedAsync;
+			_consumer_inventory.MessageReceived += OnInventoryMessageReceivedAsync;
 		}
 
 		private async void MainForm_Load(object sender, EventArgs e)
@@ -33,14 +33,13 @@ namespace Rabbitmq_Consumer
 			await _consumer_inventory.StartConsumingAsync("queue_inventory", "routingKey_exchange_order - Inventory");
 		}
 
-		private async Task<bool> OnMessageReceivedAsync(byte[] messageBody, ulong deliveryTag)
+		private async Task<bool> OnOrderMessageReceivedAsync(byte[] messageBody, ulong deliveryTag)
 		{
 			string message = Encoding.UTF8.GetString(messageBody);
 			try
 			{
 				await Task.Delay(100);
-				SafeUpdateText(txt_OrderMessages,message);
-				SafeUpdateText(txt_InventoryMessages, message);
+				SafeUpdateText(listBox_OrderMessages,message);
 				return true;
 			}
 			catch 
@@ -49,17 +48,41 @@ namespace Rabbitmq_Consumer
 			}
 		}
 
-		private void SafeUpdateText(TextBox textBox, string text)
+		private async Task<bool> OnInventoryMessageReceivedAsync(byte[] messageBody, ulong deliveryTag)
 		{
-			if (textBox.InvokeRequired)
+			string message = Encoding.UTF8.GetString(messageBody);
+			try
 			{
-				textBox.BeginInvoke(new Action(() => textBox.Text = text));
+				await Task.Delay(100);
+				SafeUpdateText(listBox_InventoryMessages, message);
+				return true;
 			}
-			else
+			catch
 			{
-				textBox.Text = text;
+				return false;
 			}
 		}
 
+		private void SafeUpdateText(ListBox listBox, string text)
+		{
+			if (listBox.InvokeRequired)
+			{
+				listBox.BeginInvoke(new Action(() => {
+					listBox.Items.Add(text);
+					listBox.TopIndex = listBox.Items.Count - 1;
+				}));
+			}
+			else
+			{
+				listBox.Items.Add(text);
+				listBox.TopIndex = listBox.Items.Count - 1;
+			}
+		}
+
+		private async void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+		{
+			await _consumer_order.StopConsumingAsync();
+			await _consumer_inventory.StopConsumingAsync();
+		}
 	}
 }
