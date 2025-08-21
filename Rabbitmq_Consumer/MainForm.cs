@@ -17,7 +17,6 @@ namespace Rabbitmq_Consumer
     {
         private readonly IRabbitMQConsumer _consumer_order;
 		private readonly IRabbitMQConsumer _consumer_inventory;
-		private List<string> _messages = new List<string>();
 		public MainForm(IRabbitMQConsumer consumer_order, IRabbitMQConsumer consumer_inventory)
 		{
 			InitializeComponent();
@@ -27,10 +26,16 @@ namespace Rabbitmq_Consumer
 			_consumer_inventory.MessageReceived += OnInventoryMessageReceivedAsync;
 		}
 
-		private async void MainForm_Load(object sender, EventArgs e)
+		private async void btn_ReceiveMessage_Click(object sender, EventArgs e)
 		{
 			await _consumer_order.StartConsumingAsync("queue_order", "routingKey_exchange_order - Inventory");
 			await _consumer_inventory.StartConsumingAsync("queue_inventory", "routingKey_exchange_order - Inventory");
+		}
+
+		private async void btn_StopReceiveMessage_Click(object sender, EventArgs e)
+		{
+			await _consumer_order.StopConsumingAsync();
+			await _consumer_inventory.StopConsumingAsync();
 		}
 
 		private async Task<bool> OnOrderMessageReceivedAsync(byte[] messageBody, ulong deliveryTag)
@@ -79,10 +84,12 @@ namespace Rabbitmq_Consumer
 			}
 		}
 
-		private async void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+		private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
 		{
-			await _consumer_order.StopConsumingAsync();
-			await _consumer_inventory.StopConsumingAsync();
+			_consumer_order.StopConsumingAsync().Wait(TimeSpan.FromSeconds(0.5));
+			_consumer_inventory.StopConsumingAsync().Wait(TimeSpan.FromSeconds(0.5));
 		}
+
+
 	}
 }

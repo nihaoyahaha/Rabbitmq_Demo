@@ -32,6 +32,8 @@
 			this.label2 = new System.Windows.Forms.Label();
 			this.listBox_OrderMessages = new System.Windows.Forms.ListBox();
 			this.listBox_InventoryMessages = new System.Windows.Forms.ListBox();
+			this.btn_ReceiveMessage = new System.Windows.Forms.Button();
+			this.btn_StopReceiveMessage = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
 			// label1
@@ -70,11 +72,33 @@
 			this.listBox_InventoryMessages.Size = new System.Drawing.Size(329, 244);
 			this.listBox_InventoryMessages.TabIndex = 2;
 			// 
+			// btn_ReceiveMessage
+			// 
+			this.btn_ReceiveMessage.Location = new System.Drawing.Point(15, 353);
+			this.btn_ReceiveMessage.Name = "btn_ReceiveMessage";
+			this.btn_ReceiveMessage.Size = new System.Drawing.Size(75, 23);
+			this.btn_ReceiveMessage.TabIndex = 3;
+			this.btn_ReceiveMessage.Text = "开始接收消息";
+			this.btn_ReceiveMessage.UseVisualStyleBackColor = true;
+			this.btn_ReceiveMessage.Click += new System.EventHandler(this.btn_ReceiveMessage_Click);
+			// 
+			// btn_StopReceiveMessage
+			// 
+			this.btn_StopReceiveMessage.Location = new System.Drawing.Point(708, 353);
+			this.btn_StopReceiveMessage.Name = "btn_StopReceiveMessage";
+			this.btn_StopReceiveMessage.Size = new System.Drawing.Size(75, 23);
+			this.btn_StopReceiveMessage.TabIndex = 3;
+			this.btn_StopReceiveMessage.Text = "停止接收消息";
+			this.btn_StopReceiveMessage.UseVisualStyleBackColor = true;
+			this.btn_StopReceiveMessage.Click += new System.EventHandler(this.btn_StopReceiveMessage_Click);
+			// 
 			// MainForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(835, 450);
+			this.Controls.Add(this.btn_StopReceiveMessage);
+			this.Controls.Add(this.btn_ReceiveMessage);
 			this.Controls.Add(this.listBox_InventoryMessages);
 			this.Controls.Add(this.listBox_OrderMessages);
 			this.Controls.Add(this.label2);
@@ -83,7 +107,6 @@
 			this.ShowIcon = false;
 			this.Text = "消息消费者";
 			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
-			this.Load += new System.EventHandler(this.MainForm_Load);
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -94,6 +117,8 @@
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.ListBox listBox_OrderMessages;
 		private System.Windows.Forms.ListBox listBox_InventoryMessages;
+		private System.Windows.Forms.Button btn_ReceiveMessage;
+		private System.Windows.Forms.Button btn_StopReceiveMessage;
 	}
 }
 

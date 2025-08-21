@@ -19,7 +19,7 @@ namespace RabbitMQ_Helper
 			_logger = logger;
 			_rabbitInitializer = rabbitInitializer;
 		}
-		
+
 		//消息先到交换机，再按绑定规则投递。绑定在哪台交换机，就必须把消息发给那台交换机
 		public async Task PublishAsync(string message, string routingKey, string messageId = null)
 		{
@@ -88,8 +88,11 @@ namespace RabbitMQ_Helper
 
 		}
 
+		public async Task DisposeAsync()
+		{
+			await _rabbitInitializer?.DisposeAsync();
+		}
 
 
-		
 	}
 }

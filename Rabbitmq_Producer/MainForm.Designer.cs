@@ -60,6 +60,7 @@
 			this.Name = "MainForm";
 			this.ShowIcon = false;
 			this.Text = "消息生产者";
+			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
 			this.ResumeLayout(false);
 			this.PerformLayout();
 

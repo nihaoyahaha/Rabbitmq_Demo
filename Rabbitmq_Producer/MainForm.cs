@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ_Helper;
 using System;
@@ -18,11 +19,13 @@ namespace Rabbitmq_Producer
 {
 	public partial class MainForm : Form
 	{
+		private readonly ILogger<MainForm> _logger;
 		private readonly IRabbitMQProducer _producer;
-		public MainForm(IRabbitMQProducer producer)
+		public MainForm(IRabbitMQProducer producer, ILogger<MainForm> logger)
 		{
 			InitializeComponent();
 			_producer = producer;
+			_logger = logger;
 		}
 
 		private async void btn_send_Click(object sender, EventArgs e)
@@ -33,10 +36,14 @@ namespace Rabbitmq_Producer
 			}
 			catch (Exception ex)
 			{
-				MessageBox.Show("发送失败：" + ex.Message);
+				_logger.LogError(ex.ToString());
+				throw;
 			}
 		}
 
-
+		private  void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+		{
+			_producer?.DisposeAsync().Wait(TimeSpan.FromSeconds(0.5));
+		}
 	}
 }

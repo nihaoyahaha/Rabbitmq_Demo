@@ -25,7 +25,7 @@ namespace RabbitMQ_Helper
 			services.AddSingleton(config);
 			services.AddSingleton<IRabbitMQInitializer, RabbitMQInitializer>();
 			services.AddSingleton<IRabbitMQProducer, RabbitMQProducer>();
-			services.AddSingleton<IRabbitMQConsumer, EventingBasicConsumer>();
+			services.AddTransient<IRabbitMQConsumer, EventingBasicConsumer>();
 
 			// 注册为 IHostedService，应用启动时自动初始化
 			services.AddHostedService<RabbitMQProducerHostedService>();
