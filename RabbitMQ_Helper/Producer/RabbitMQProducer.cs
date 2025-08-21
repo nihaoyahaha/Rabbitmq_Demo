@@ -75,6 +75,9 @@ namespace RabbitMQ_Helper
 						basicProperties: props,
 						body: messageBodyBytes);
 
+					//注册处理无法路由的消息的事件
+					channel.BasicReturnAsync += BasicReturnAsync;
+
 					_logger.LogInformation($"消息已发布: RoutingKey='{routingKey}', MessageId='{props.MessageId}'");
 				}
 				catch (Exception ex)
@@ -84,8 +87,19 @@ namespace RabbitMQ_Helper
 				}
 
 			}
+		}
 
+		//没有队列能接收消息时,这条消息原路退回
+		public Task BasicReturnAsync(object sender, BasicReturnEventArgs eventArgs)
+		{
+			string exchange = eventArgs.Exchange;
+			string routingKey = eventArgs.RoutingKey;
+			string replyText = eventArgs.ReplyText;  // 比如 "NO_ROUTE"
+			byte[] body = eventArgs.Body.ToArray();
 
+			_logger.LogWarning($"交换机[{exchange}]无法路由规则为[{ routingKey}]的消息，消息退回！原因: {replyText}");
+			_logger.LogWarning($"原始消息: {Encoding.UTF8.GetString(body)}");
+			return Task.CompletedTask;
 		}
 
 		public async Task DisposeAsync()

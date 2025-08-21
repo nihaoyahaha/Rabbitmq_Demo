@@ -45,8 +45,9 @@ namespace RabbitMQ_Helper
 					Port = _config.Port,
 					UserName = _config.UserName,
 					Password = _config.Password,
-					//AutomaticRecoveryEnabled = true, // 启用自动恢复（断线重连）
-					//NetworkRecoveryInterval = TimeSpan.FromSeconds(30)
+					AutomaticRecoveryEnabled = true, // 启用自动恢复（断线重连）
+					TopologyRecoveryEnabled =true,//在连接断开重连后，是否自动重新声明你之前创建的交换机、队列、绑定和消费者。
+					NetworkRecoveryInterval = TimeSpan.FromSeconds(30)//设置重试间隔（默认 5 秒）
 				};
 
 				_logger.LogInformation("正在连接 RabbitMQ...");
