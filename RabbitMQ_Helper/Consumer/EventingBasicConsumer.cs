@@ -17,6 +17,7 @@ namespace RabbitMQ_Helper.Consumer
 		private IChannel _channel;
 		private AsyncEventingBasicConsumer _consumer;
 		private string _consumerTag;
+		private bool _isConsuming = false;
 
 		public event Func<byte[], ulong, Task<bool>> MessageReceived;
 
@@ -27,8 +28,14 @@ namespace RabbitMQ_Helper.Consumer
 		}
 
 		//开始监听队列
-		public async Task StartConsumingAsync(string queue,string routingKey)
+		public async Task StartConsumingAsync(string queue, string routingKey)
 		{
+			if (_isConsuming)
+			{
+				_logger.LogWarning("消费者已在运行，跳过启动");
+				return;
+			}
+
 			try
 			{
 				_logger.LogInformation("正在启动消费者，监听队列: {Queue}", queue);
@@ -49,6 +56,8 @@ namespace RabbitMQ_Helper.Consumer
 					autoAck: false,   // 手动确认，确认机制 true:消息一收到，RabbitMQ 就认为“处理完了”，立刻删除,如果程序崩溃，消息就丢了 false:收到消息后，必须手动调用 BasicAck 告诉 RabbitMQ“我处理完了”,安全 ✅，即使程序崩溃，消息会重新投递
 					consumer: _consumer);//消费者对象
 
+				_isConsuming = true;
+
 				_logger.LogInformation("消费者已启动，ConsumerTag: {Tag}", _consumerTag);
 			}
 			catch (Exception ex)
@@ -62,7 +71,11 @@ namespace RabbitMQ_Helper.Consumer
 		//停止监听队列
 		public async Task StopConsumingAsync()
 		{
-			if (string.IsNullOrEmpty(_consumerTag)) return;
+			if (!_isConsuming || string.IsNullOrEmpty(_consumerTag))
+			{
+				_logger.LogWarning("消费者已停止运行，跳过停止");
+				return;
+			}
 
 			try
 			{
@@ -75,6 +88,7 @@ namespace RabbitMQ_Helper.Consumer
 			}
 			finally
 			{
+				_isConsuming = false;
 				_consumerTag = null;
 			}
 		}
@@ -117,24 +131,24 @@ namespace RabbitMQ_Helper.Consumer
 
 		private async Task DisposeChannelAsync()
 		{
-			if (_channel != null)
+			if (_channel == null) return;
+			try
 			{
-				try
+				if (_channel.IsOpen)
 				{
-					if (_channel.IsOpen)
-					{
-						await _channel.CloseAsync();
-					}
-					await _channel.DisposeAsync();
+					await _channel.CloseAsync();
+					_logger.LogInformation("信道已关闭");
 				}
-				catch (Exception ex)
-				{
-					_logger.LogWarning(ex, "关闭消费者通道时出错");
-				}
-				finally
-				{
-					_channel = null;
-				}
+				await _channel.DisposeAsync();
+				_logger.LogInformation("信道已销毁");
+			}
+			catch (Exception ex)
+			{
+				_logger.LogWarning(ex, "关闭消费者通道时出错");
+			}
+			finally
+			{
+				_channel = null;
 			}
 		}
 

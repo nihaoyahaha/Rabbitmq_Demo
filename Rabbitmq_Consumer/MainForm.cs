@@ -86,8 +86,8 @@ namespace Rabbitmq_Consumer
 
 		private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
 		{
-			_consumer_order.StopConsumingAsync().Wait(TimeSpan.FromSeconds(0.5));
-			_consumer_inventory.StopConsumingAsync().Wait(TimeSpan.FromSeconds(0.5));
+			//_consumer_order.StopConsumingAsync().Wait(TimeSpan.FromSeconds(0.5));
+			//_consumer_inventory.StopConsumingAsync().Wait(TimeSpan.FromSeconds(0.5));
 		}
 
 

@@ -43,7 +43,7 @@ namespace Rabbitmq_Producer
 
 		private  void MainForm_FormClosing(object sender, FormClosingEventArgs e)
 		{
-			_producer?.DisposeAsync().Wait(TimeSpan.FromSeconds(0.5));
+			//_producer?.DisposeAsync().Wait(TimeSpan.FromSeconds(0.5));
 		}
 	}
 }

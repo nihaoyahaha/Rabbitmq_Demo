@@ -8,17 +8,18 @@ using System.Threading.Tasks;
 
 namespace RabbitMQ_Helper
 {
-	internal class RabbitMQInitializer : IRabbitMQInitializer
+	internal class RabbitMQInitializer : IRabbitMQInitializer,IAsyncDisposable
 	{
 		private readonly RabbitMQConfig _config;
 		private readonly ILogger<RabbitMQInitializer> _logger;
 
 		private IConnection _connection;
 
+		//rabbitmq 服务器是否成功连接
 		private bool _isInitialized = false;
 
 		//交换机名
-		private readonly string _exchangeName = "exchange_order_inventory";
+		private readonly string _exchangeName = "exchange_order_inventory2";
 		
 		//交换机名称
 		public string ExchangeName => _exchangeName;
@@ -58,7 +59,7 @@ namespace RabbitMQ_Helper
 			}
 			catch (Exception ex)
 			{
-				_logger.LogError(ex, "RabbitMQ 初始化失败");
+				_logger.LogError($"RabbitMQ 连接失败失败,{ex.ToString()}");
 				throw;
 			}
 		}
@@ -206,14 +207,17 @@ namespace RabbitMQ_Helper
 		/// <summary>
 		/// 释放资源
 		/// </summary>
-		public async Task DisposeAsync()
+
+		public async ValueTask DisposeAsync()
 		{
 			if (_connection != null)
 			{
 				try
 				{
 					await _connection.CloseAsync();
+					_logger.LogInformation("RabbitMQ连接已关闭!");
 					await _connection.DisposeAsync();
+					_logger.LogInformation("RabbitMQ连接已销毁!");
 				}
 				catch (Exception ex)
 				{
@@ -221,6 +225,5 @@ namespace RabbitMQ_Helper
 				}
 			}
 		}
-		
 	}
 }

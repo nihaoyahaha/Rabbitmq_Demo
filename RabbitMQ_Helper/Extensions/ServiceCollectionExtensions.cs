@@ -13,7 +13,7 @@ namespace RabbitMQ_Helper
 	public static class ServiceCollectionServiceExtensions
 	{
 		/// <summary>
-		/// 添加 RabbitMQ Producer 服务
+		/// 添加 RabbitMQ 服务
 		/// </summary>
 		public static IServiceCollection AddRabbitMQ(this IServiceCollection services, IConfiguration configuration, string sectionName = "RabbitMQ")
 		{
@@ -49,17 +49,15 @@ namespace RabbitMQ_Helper
 
 
 	/// <summary>
-	/// 后台服务：在应用启动时初始化 Producer
+	/// 后台服务：在应用启动时初始化RabbitMQ连接
 	/// </summary>
 	internal class RabbitMQProducerHostedService : IHostedService
 	{
 		private readonly IRabbitMQInitializer _initializer;
-		private readonly ILogger<RabbitMQProducerHostedService> _logger;
 
 		public RabbitMQProducerHostedService(IRabbitMQInitializer initializer, ILogger<RabbitMQProducerHostedService> logger)
 		{
 			_initializer = initializer;
-			_logger = logger;
 		}
 
 		public async Task StartAsync(CancellationToken cancellationToken)
@@ -67,11 +65,9 @@ namespace RabbitMQ_Helper
 			try
 			{
 				await _initializer.CreateConnectionAsync();
-				_logger.LogInformation("RabbitMQ 初始化成功!");
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
-				_logger.LogError(ex, "RabbitMQ 初始化失败!");
 				throw;
 			}
 		}

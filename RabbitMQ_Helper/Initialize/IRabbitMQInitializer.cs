@@ -22,7 +22,5 @@ namespace RabbitMQ_Helper
 		//初始化Rabbitmq连接
 		Task CreateConnectionAsync();
 
-		//关闭连接
-		Task DisposeAsync();
 	}
 }

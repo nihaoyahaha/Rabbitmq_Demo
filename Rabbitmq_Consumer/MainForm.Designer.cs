@@ -76,7 +76,7 @@
 			// 
 			this.btn_ReceiveMessage.Location = new System.Drawing.Point(15, 353);
 			this.btn_ReceiveMessage.Name = "btn_ReceiveMessage";
-			this.btn_ReceiveMessage.Size = new System.Drawing.Size(75, 23);
+			this.btn_ReceiveMessage.Size = new System.Drawing.Size(99, 23);
 			this.btn_ReceiveMessage.TabIndex = 3;
 			this.btn_ReceiveMessage.Text = "开始接收消息";
 			this.btn_ReceiveMessage.UseVisualStyleBackColor = true;
@@ -84,9 +84,9 @@
 			// 
 			// btn_StopReceiveMessage
 			// 
-			this.btn_StopReceiveMessage.Location = new System.Drawing.Point(708, 353);
+			this.btn_StopReceiveMessage.Location = new System.Drawing.Point(694, 353);
 			this.btn_StopReceiveMessage.Name = "btn_StopReceiveMessage";
-			this.btn_StopReceiveMessage.Size = new System.Drawing.Size(75, 23);
+			this.btn_StopReceiveMessage.Size = new System.Drawing.Size(89, 23);
 			this.btn_StopReceiveMessage.TabIndex = 3;
 			this.btn_StopReceiveMessage.Text = "停止接收消息";
 			this.btn_StopReceiveMessage.UseVisualStyleBackColor = true;
