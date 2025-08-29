@@ -35,6 +35,7 @@
 			this.btn_ReceiveMessage = new System.Windows.Forms.Button();
 			this.btn_StopReceiveMessage = new System.Windows.Forms.Button();
 			this.pictureBox1 = new System.Windows.Forms.PictureBox();
+			this.label3 = new System.Windows.Forms.Label();
 			((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
 			this.SuspendLayout();
 			// 
@@ -108,6 +109,15 @@
 			this.pictureBox1.TabIndex = 4;
 			this.pictureBox1.TabStop = false;
 			// 
+			// label3
+			// 
+			this.label3.AutoSize = true;
+			this.label3.Location = new System.Drawing.Point(606, 9);
+			this.label3.Name = "label3";
+			this.label3.Size = new System.Drawing.Size(77, 12);
+			this.label3.TabIndex = 1;
+			this.label3.Text = "接收图片队列";
+			// 
 			// MainForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -119,6 +129,7 @@
 			this.Controls.Add(this.listBox_InventoryMessages);
 			this.Controls.Add(this.listBox_OrderMessages);
 			this.Controls.Add(this.label2);
+			this.Controls.Add(this.label3);
 			this.Controls.Add(this.label1);
 			this.Name = "MainForm";
 			this.ShowIcon = false;
@@ -137,6 +148,7 @@
 		private System.Windows.Forms.Button btn_ReceiveMessage;
 		private System.Windows.Forms.Button btn_StopReceiveMessage;
 		private System.Windows.Forms.PictureBox pictureBox1;
+		private System.Windows.Forms.Label label3;
 	}
 }
 
