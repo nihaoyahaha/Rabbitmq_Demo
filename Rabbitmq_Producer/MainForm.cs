@@ -38,7 +38,10 @@ namespace Rabbitmq_Producer
 		{
 			try
 			{
-				await _producer.PublishAsync($"[{DateTime.Now .ToString("yyyy/MM/dd HH:mm:ss")}]{txt_Message.Text},路由规则:{cmb_RoutingKey.Text}", cmb_RoutingKey.Text);
+				string message = $"[{DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss")}]{txt_Message.Text},路由规则:{cmb_RoutingKey.Text}";
+				//消息体 → 就是你要传的内容（必须是 byte[]）
+				byte[] messageBodyBytes = Encoding.UTF8.GetBytes(message);
+				await _producer.PublishAsync(messageBodyBytes, cmb_RoutingKey.Text);
 			}
 			catch (Exception ex)
 			{

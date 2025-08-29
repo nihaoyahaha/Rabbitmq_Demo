@@ -21,9 +21,9 @@ namespace RabbitMQ_Helper
 		}
 
 		//消息先到交换机，再按绑定规则投递。绑定在哪台交换机，就必须把消息发给那台交换机
-		public async Task PublishAsync(string message, string routingKey, string messageId = null)
+		public async Task PublishAsync(byte [] message, string routingKey, string messageId = null)
 		{
-			if (string.IsNullOrEmpty(message)) 
+			if (message is null || message.Length == 0) 
 				throw new ArgumentException("消息不能为空", nameof(message));
 
 			using (var channel = await _rabbitInitializer.CreateChannelAsync())
@@ -33,8 +33,6 @@ namespace RabbitMQ_Helper
 					//注册处理无法路由的消息的事件
 					channel.BasicReturnAsync += BasicReturnAsync;
 
-					//消息体 → 就是你要传的内容（必须是 byte[]）
-					byte[] messageBodyBytes = Encoding.UTF8.GetBytes(message);
 					BasicProperties props = CreateBasicProperties(messageId);
 
 					await channel.BasicPublishAsync(
@@ -42,7 +40,7 @@ namespace RabbitMQ_Helper
 						routingKey: routingKey,
 						mandatory: true,// ⚠️ 强制投递  false（默认）：消息发出去就不管了、true：必须成功投递到至少一个队列，否则触发 Return 事件
 						basicProperties: props,
-						body: messageBodyBytes);
+						body: message);
 
 
 
