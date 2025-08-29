@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using DrawKit;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ_Helper;
@@ -21,15 +23,18 @@ namespace Rabbitmq_Producer
 {
 	public partial class MainForm : Form
 	{
+		private readonly IServiceProvider _serviceProvider;
 		private readonly ILogger<MainForm> _logger;
 		private readonly IRabbitMQProducer _producer;
 		private readonly IConfiguration _configuration;
-		public MainForm(IRabbitMQProducer producer, ILogger<MainForm> logger, IConfiguration configuration)
+
+		public MainForm(IRabbitMQProducer producer, ILogger<MainForm> logger, IConfiguration configuration, IServiceProvider serviceProvider)
 		{
 			InitializeComponent();
 			_producer = producer;
 			_logger = logger;
 			_configuration = configuration;
+			_serviceProvider = serviceProvider;
 		}
 		private void MainForm_Load(object sender, EventArgs e)
 		{
@@ -116,6 +121,12 @@ namespace Rabbitmq_Producer
 					MessageBox.Show($"无法加载图像：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				}
 			}
+		}
+
+		private void btn_drawPicture_Click(object sender, EventArgs e)
+		{
+			var form = _serviceProvider.GetRequiredService<CanvasForm>();
+			form.ShowDialog();
 		}
 	}
 	

@@ -37,6 +37,7 @@
 			this.btn_openFile = new System.Windows.Forms.Button();
 			this.groupBox1 = new System.Windows.Forms.GroupBox();
 			this.groupBox2 = new System.Windows.Forms.GroupBox();
+			this.btn_drawPicture = new System.Windows.Forms.Button();
 			((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
 			this.groupBox1.SuspendLayout();
 			this.groupBox2.SuspendLayout();
@@ -121,6 +122,7 @@
 			// 
 			// groupBox2
 			// 
+			this.groupBox2.Controls.Add(this.btn_drawPicture);
 			this.groupBox2.Controls.Add(this.pictureBox1);
 			this.groupBox2.Controls.Add(this.btn_sendPicture);
 			this.groupBox2.Controls.Add(this.btn_openFile);
@@ -130,6 +132,16 @@
 			this.groupBox2.TabIndex = 7;
 			this.groupBox2.TabStop = false;
 			this.groupBox2.Text = "发送图片";
+			// 
+			// btn_drawPicture
+			// 
+			this.btn_drawPicture.Location = new System.Drawing.Point(121, 30);
+			this.btn_drawPicture.Name = "btn_drawPicture";
+			this.btn_drawPicture.Size = new System.Drawing.Size(75, 23);
+			this.btn_drawPicture.TabIndex = 6;
+			this.btn_drawPicture.Text = "画图";
+			this.btn_drawPicture.UseVisualStyleBackColor = true;
+			this.btn_drawPicture.Click += new System.EventHandler(this.btn_drawPicture_Click);
 			// 
 			// MainForm
 			// 
@@ -164,6 +176,7 @@
 		private System.Windows.Forms.Button btn_openFile;
 		private System.Windows.Forms.GroupBox groupBox1;
 		private System.Windows.Forms.GroupBox groupBox2;
+		private System.Windows.Forms.Button btn_drawPicture;
 	}
 }
 

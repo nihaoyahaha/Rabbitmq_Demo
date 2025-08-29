@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using RabbitMQ_Helper;
 using Microsoft.Extensions.Configuration;
+using DrawKit;
 
 namespace Rabbitmq_Producer
 {
@@ -51,6 +52,7 @@ namespace Rabbitmq_Producer
 				{
 					services.AddRabbitMQ(context.Configuration);
 					services.AddScoped<MainForm>();
+					services.AddTransient<CanvasForm>();
 				});
 		}
 
