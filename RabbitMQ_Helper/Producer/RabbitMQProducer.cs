@@ -30,19 +30,21 @@ namespace RabbitMQ_Helper
 			{
 				try
 				{
+					//注册处理无法路由的消息的事件
+					channel.BasicReturnAsync += BasicReturnAsync;
+
 					//消息体 → 就是你要传的内容（必须是 byte[]）
 					byte[] messageBodyBytes = Encoding.UTF8.GetBytes(message);
 					BasicProperties props = CreateBasicProperties(messageId);
 
 					await channel.BasicPublishAsync(
-						exchange: _rabbitInitializer.ExchangeName,
+						exchange: _rabbitInitializer.MainExchangeName,
 						routingKey: routingKey,
 						mandatory: true,// ⚠️ 强制投递  false（默认）：消息发出去就不管了、true：必须成功投递到至少一个队列，否则触发 Return 事件
 						basicProperties: props,
 						body: messageBodyBytes);
 
-					//注册处理无法路由的消息的事件
-					channel.BasicReturnAsync += BasicReturnAsync;
+
 
 					_logger.LogInformation($"消息已发布: RoutingKey='{routingKey}', MessageId='{props.MessageId}'");
 				}

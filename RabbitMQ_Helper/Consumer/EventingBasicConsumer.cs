@@ -18,6 +18,8 @@ namespace RabbitMQ_Helper.Consumer
 		private AsyncEventingBasicConsumer _consumer;
 		private string _consumerTag;
 		private bool _isConsuming = false;
+		//消息消费失败最多重试次数
+		private const int _maxRetries = 3;
 
 		public event Func<byte[], ulong, Task<bool>> MessageReceived;
 
@@ -42,9 +44,6 @@ namespace RabbitMQ_Helper.Consumer
 
 				// 消费者自己创建通道
 				_channel = await _rabbitInitializer.CreateChannelAsync();
-
-				// 消费者负责声明队列和绑定（这是它的职责！）
-				await _rabbitInitializer.DeclareQueueAndBindAsync(_channel, queue, routingKey);
 
 				// 创建消费者对象
 				_consumer = new AsyncEventingBasicConsumer(_channel);
@@ -84,7 +83,7 @@ namespace RabbitMQ_Helper.Consumer
 			}
 			catch (Exception ex)
 			{
-				_logger.LogWarning(ex, "取消消费者时出错");
+				_logger.LogWarning(ex, "消费者停止时出错");
 			}
 			finally
 			{
@@ -98,12 +97,16 @@ namespace RabbitMQ_Helper.Consumer
 			byte[] body = eventArgs.Body.ToArray();
 			//RabbitMQ 向消费者推送消息时给每条消息分配的投递标签
 			ulong deliveryTag = eventArgs.DeliveryTag;
-
+			var headers = eventArgs.BasicProperties.Headers; // 消息头
 			_logger.LogInformation("收到新消息，DeliveryTag: {Tag}", deliveryTag);
 
 			try
 			{
 				if (MessageReceived == null) return;
+
+				//获取当前重试次数
+				int retryCount = GetRetryCount(headers);
+
 				// 调用客户端事件处理器处理业务逻辑
 				bool success = await MessageReceived?.Invoke(body, deliveryTag);
 				if (success)
@@ -114,18 +117,68 @@ namespace RabbitMQ_Helper.Consumer
 				}
 				else
 				{
-					// 客户端处理失败，NACK（可选择是否重回队列）
-					await _channel.BasicNackAsync(
-						deliveryTag: deliveryTag,
-						multiple: false,
-						requeue: true); // true: 重回队列；false: 进入死信队列
+					// 处理失败 → 决定是否重试
+					await HandleFailedMessage(retryCount, deliveryTag, eventArgs.BasicProperties);
 					_logger.LogWarning("消息处理失败，已 NACK (重回队列), DeliveryTag: {Tag}", deliveryTag);
 				}
 			}
 			catch (Exception ex)
 			{
-				_logger.LogError(ex, "处理消息时发生异常, DeliveryTag: {Tag}", deliveryTag);
-				await _channel.BasicNackAsync(deliveryTag, multiple: false, requeue: true);
+				int retryCount = GetRetryCount(eventArgs.BasicProperties.Headers);
+				_logger.LogError(ex, "处理消息时发生异常，重试次数: {RetryCount}, DeliveryTag: {Tag}", retryCount, deliveryTag);
+
+				await HandleFailedMessage(retryCount, deliveryTag, eventArgs.BasicProperties);
+			}
+		
+		}
+
+		private int GetRetryCount(IDictionary<string, object> headers)
+		{
+			if (headers != null &&
+				headers.TryGetValue("x-retry-count", out var value) &&
+				value is int count)
+			{
+				return count;
+			}
+			return 0; // 第一次消费
+		}
+
+		private async Task HandleFailedMessage(int currentRetryCount, ulong deliveryTag, IReadOnlyBasicProperties properties)
+		{
+			bool isUseDeadLetter = bool.Parse(properties.Headers["UseDeadLetter"].ToString());
+			//不启用死信队列时，消息重回队列
+			if (!isUseDeadLetter)
+			{  await _channel.BasicNackAsync(
+				deliveryTag: deliveryTag,//投递标签
+			  	multiple: false,
+			  	requeue: true);
+				return;
+			}
+			int nextRetryCount = currentRetryCount + 1;
+
+			properties.Headers["x-retry-count"] = nextRetryCount;
+
+			if (nextRetryCount < _maxRetries)
+			{
+				// 重试中：重回队列
+				await _channel.BasicNackAsync(
+					deliveryTag: deliveryTag,
+					multiple: false,
+					requeue: true //重回队列
+				);
+
+				_logger.LogWarning("消息处理失败，第 {RetryCount} 次重试，将重回队列，DeliveryTag: {Tag}", nextRetryCount, deliveryTag);
+			}
+			else
+			{
+				// 达到最大重试次数：进入死信队列
+				await _channel.BasicNackAsync(
+					deliveryTag: deliveryTag,
+					multiple: false,
+					requeue: false // ❌ 不重回队列 → 触发死信机制
+				);
+
+				_logger.LogError("消息处理失败，已达到最大重试次数 {MaxRetries}，将进入死信队列，DeliveryTag: {Tag}", _maxRetries, deliveryTag);
 			}
 		}
 

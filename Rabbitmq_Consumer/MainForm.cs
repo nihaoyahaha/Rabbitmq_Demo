@@ -1,4 +1,6 @@
-﻿using RabbitMQ_Helper;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using RabbitMQ_Helper;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -13,58 +15,71 @@ using System.Windows.Forms;
 
 namespace Rabbitmq_Consumer
 {
-    public partial class MainForm: Form
-    {
-        private readonly IRabbitMQConsumer _consumer_order;
-		private readonly IRabbitMQConsumer _consumer_inventory;
-		public MainForm(IRabbitMQConsumer consumer_order, IRabbitMQConsumer consumer_inventory)
+	public partial class MainForm : Form
+	{
+		private readonly IServiceProvider _serviceProvider;
+		private readonly IConfiguration _configuration;
+		//消费者对象，队列名，路由规则映射
+		private List<(IRabbitMQConsumer Consumer, string QueueName, string RoutingKey)> _consumers = new List<(IRabbitMQConsumer, string, string)>();
+
+		public MainForm(IConfiguration configuration, IServiceProvider serviceProvider)
 		{
 			InitializeComponent();
-			_consumer_order = consumer_order;
-			_consumer_inventory = consumer_inventory;
-			_consumer_order.MessageReceived += OnOrderMessageReceivedAsync;
-			_consumer_inventory.MessageReceived += OnInventoryMessageReceivedAsync;
+			_configuration = configuration;
+			_serviceProvider = serviceProvider;
+			InitializeConsumer();
 		}
 
+	    //动态创建消费者
+		private void InitializeConsumer()
+		{
+			var queues = _configuration.GetSection("RabbitMQ:Queues").GetChildren();
+			if (queues == null || !queues.Any())
+			{
+				MessageBox.Show("未找到队列配置！");
+				return;
+			}
+
+			foreach (var queue in queues)
+			{
+				string queueName = queue.GetValue<string>("QueueName");
+				string routingKey = queue.GetValue<string>("RoutingKey");
+				var consumer = _serviceProvider.GetRequiredService<IRabbitMQConsumer>();
+				consumer.MessageReceived += async (messageBody, deliveryTag) =>
+				{
+					string message = Encoding.UTF8.GetString(messageBody);
+					try
+					{
+						await Task.Delay(100);
+						ListBox list = message.Contains("order") ? listBox_OrderMessages : listBox_InventoryMessages;
+						SafeUpdateText(list, message);
+						return true;
+					}
+					catch
+					{
+						return false;
+					}
+				};
+				
+				_consumers.Add((consumer,queueName,routingKey));
+			}
+		}
+
+		//开始接收消息
 		private async void btn_ReceiveMessage_Click(object sender, EventArgs e)
 		{
-			await _consumer_order.StartConsumingAsync("queue_order", "routingKey_exchange_order - Inventory");
-			await _consumer_inventory.StartConsumingAsync("queue_inventory", "routingKey_exchange_order - Inventory");
+			foreach (var consumer in _consumers)
+			{
+				await consumer.Consumer.StartConsumingAsync(consumer.QueueName,consumer.RoutingKey);
+			}
 		}
 
+		//停止接收消息
 		private async void btn_StopReceiveMessage_Click(object sender, EventArgs e)
 		{
-			await _consumer_order.StopConsumingAsync();
-			await _consumer_inventory.StopConsumingAsync();
-		}
-
-		private async Task<bool> OnOrderMessageReceivedAsync(byte[] messageBody, ulong deliveryTag)
-		{
-			string message = Encoding.UTF8.GetString(messageBody);
-			try
+			foreach (var consumer in _consumers)
 			{
-				await Task.Delay(100);
-				SafeUpdateText(listBox_OrderMessages,message);
-				return true;
-			}
-			catch 
-			{
-				return false;
-			}
-		}
-
-		private async Task<bool> OnInventoryMessageReceivedAsync(byte[] messageBody, ulong deliveryTag)
-		{
-			string message = Encoding.UTF8.GetString(messageBody);
-			try
-			{
-				await Task.Delay(100);
-				SafeUpdateText(listBox_InventoryMessages, message);
-				return true;
-			}
-			catch
-			{
-				return false;
+				await consumer.Consumer.StopConsumingAsync();
 			}
 		}
 
@@ -72,7 +87,8 @@ namespace Rabbitmq_Consumer
 		{
 			if (listBox.InvokeRequired)
 			{
-				listBox.BeginInvoke(new Action(() => {
+				listBox.BeginInvoke(new Action(() =>
+				{
 					listBox.Items.Add(text);
 					listBox.TopIndex = listBox.Items.Count - 1;
 				}));
@@ -83,13 +99,6 @@ namespace Rabbitmq_Consumer
 				listBox.TopIndex = listBox.Items.Count - 1;
 			}
 		}
-
-		private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
-		{
-			//_consumer_order.StopConsumingAsync().Wait(TimeSpan.FromSeconds(0.5));
-			//_consumer_inventory.StopConsumingAsync().Wait(TimeSpan.FromSeconds(0.5));
-		}
-
 
 	}
 }

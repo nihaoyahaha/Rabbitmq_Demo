@@ -21,18 +21,24 @@ namespace Rabbitmq_Producer
 	{
 		private readonly ILogger<MainForm> _logger;
 		private readonly IRabbitMQProducer _producer;
-		public MainForm(IRabbitMQProducer producer, ILogger<MainForm> logger)
+		private readonly IConfiguration _configuration;
+		public MainForm(IRabbitMQProducer producer, ILogger<MainForm> logger, IConfiguration configuration)
 		{
 			InitializeComponent();
 			_producer = producer;
 			_logger = logger;
+			_configuration = configuration;
+		}
+		private void MainForm_Load(object sender, EventArgs e)
+		{
+			LoadRoutingKeys();
 		}
 
 		private async void btn_send_Click(object sender, EventArgs e)
 		{
 			try
 			{
-				await _producer.PublishAsync($"[{DateTime.Now .ToString("yyyy/MM/dd HH:mm:ss")}]{txt_Message.Text}", "routingKey_exchange_order-Inventory");
+				await _producer.PublishAsync($"[{DateTime.Now .ToString("yyyy/MM/dd HH:mm:ss")}]{txt_Message.Text},路由规则:{cmb_RoutingKey.Text}", cmb_RoutingKey.Text);
 			}
 			catch (Exception ex)
 			{
@@ -41,9 +47,22 @@ namespace Rabbitmq_Producer
 			}
 		}
 
-		private  void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+		private void LoadRoutingKeys()
 		{
-			//_producer?.DisposeAsync().Wait(TimeSpan.FromSeconds(0.5));
+			// 读取 RabbitMQ -> Queues 数组
+			var queues = _configuration.GetSection("RabbitMQ:Queues").GetChildren();
+
+			foreach (var queue in queues)
+			{
+				string routingKey = queue.GetValue<string>("RoutingKey");
+				if (!string.IsNullOrEmpty(routingKey))
+				{
+					cmb_RoutingKey.Items.Add(routingKey);
+				}
+			}
+			if (cmb_RoutingKey.Items.Count > 0) cmb_RoutingKey.SelectedIndex = 0;
 		}
+
+
 	}
 }

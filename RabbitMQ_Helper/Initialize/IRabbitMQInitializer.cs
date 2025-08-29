@@ -9,15 +9,13 @@ namespace RabbitMQ_Helper
     public interface IRabbitMQInitializer
     {
 		//交换机名
-		string ExchangeName { get; }
+		string MainExchangeName { get; }
 
-		IConnection Connection { get; }
-	
+		//死信交换机名
+		string DeadLetterExchangeName { get; }
+
 		//创建信道
-		Task<IChannel> CreateChannelAsync(string type = ExchangeType.Direct);
-
-		//声明队列和绑定
-		Task DeclareQueueAndBindAsync(IChannel channel, string queueName, string routingKey);
+		Task<IChannel> CreateChannelAsync();
 
 		//初始化Rabbitmq连接
 		Task CreateConnectionAsync();

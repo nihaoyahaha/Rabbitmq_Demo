@@ -17,14 +17,18 @@ namespace RabbitMQ_Helper
 
 		//rabbitmq 服务器是否成功连接
 		private bool _isInitialized = false;
-
-		//交换机名
-		private readonly string _exchangeName = "exchange_order_inventory2";
 		
-		//交换机名称
-		public string ExchangeName => _exchangeName;
-
 		public IConnection Connection => _connection;
+
+		/// <summary>
+		/// 交换机名
+		/// </summary>
+		public string MainExchangeName => _config.MainExchange;
+
+		/// <summary>
+		/// 死信交换机名
+		/// </summary>
+		public string DeadLetterExchangeName => _config.DeadLetterExchange;
 
 		public RabbitMQInitializer(RabbitMQConfig config, ILogger<RabbitMQInitializer> logger)
 		{
@@ -37,7 +41,7 @@ namespace RabbitMQ_Helper
 		/// </summary>
 		public async Task CreateConnectionAsync()
 		{
-			if (_isInitialized) return;
+			if (_isInitialized && _connection?.IsOpen == true) return;
 			try
 			{
 				var factory = new ConnectionFactory()
@@ -56,11 +60,45 @@ namespace RabbitMQ_Helper
 
 				_isInitialized = true;
 				_logger.LogInformation("RabbitMQ 连接创建成功。");
+
+				await InitializeTopologyAsync();
 			}
 			catch (Exception ex)
 			{
-				_logger.LogError($"RabbitMQ 连接失败失败,{ex.ToString()}");
+				_logger.LogError("RabbitMQ 连接失败失败,{param}",ex.ToString());
 				throw;
+			}
+		}
+
+		/// <summary>
+		/// 初始化所有交换机、队列、死信队列等拓扑结构
+		/// </summary>
+		/// <returns></returns>
+		private async Task InitializeTopologyAsync()
+		{
+			using (var channel = await _connection.CreateChannelAsync())
+			{
+				// 声明主交换机
+				await channel.ExchangeDeclareAsync(
+					_config.MainExchange,
+					ExchangeType.Direct,//直连型:按“路由键”精确匹配、Topic:模糊匹配、Fanout:广播！所有队列都发一份
+					durable: true);//持久化
+
+				_logger.LogInformation("Rabbit 成功声明交换机,exchangeName:{param}", _config.MainExchange);
+
+				// 声明死信交换机
+				await channel.ExchangeDeclareAsync(
+					_config.DeadLetterExchange,
+					ExchangeType.Direct,
+					durable: true);
+
+				_logger.LogInformation("Rabbit 成功声明死信交换机,exchangeName:{param}", _config.DeadLetterExchange);
+
+				foreach (var queueConfig in _config.Queues)
+				{
+					//声明绑定队列
+					await DeclareQueueAndBindAsync(channel, queueConfig);
+				}
 			}
 		}
 
@@ -68,22 +106,25 @@ namespace RabbitMQ_Helper
 		/// 创建信道
 		/// </summary>
 		/// <returns></returns>
-		public async Task<IChannel> CreateChannelAsync(string type = ExchangeType.Direct)
+		public async Task<IChannel> CreateChannelAsync()
 		{
 			if (_connection == null || !_connection.IsOpen)
 			{
 				await CreateConnectionAsync();
 			}
-			_logger.LogInformation($"RabbitMQ 信道创建中...");
-			IChannel channel = await _connection.CreateChannelAsync();
-
-			//生产者负责声明交换机(作用:根据你设定的规则，把消息精准地投递到不同的队列里。如果这个交换机不存在 → 创建它,如果已经存在 → 什么也不做)
-			await channel.ExchangeDeclareAsync(
-				_exchangeName, //交换机名
-				type); //直连型:按“路由键”精确匹配、Topic:模糊匹配、Fanout:广播！所有队列都发一份
+			try
+			{
+				_logger.LogInformation("RabbitMQ 信道创建中...");
+				IChannel channel = await _connection.CreateChannelAsync();
+				_logger.LogInformation("RabbitMQ 信道创建成功。");
+				return channel;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "创建 RabbitMQ 信道失败");
+				throw;
+			}
 			
-			_logger.LogInformation($"RabbitMQ 信道创建成功。");
-			return channel;
 
 			#region 扩展 被动模式
 			/*
@@ -184,44 +225,86 @@ namespace RabbitMQ_Helper
 		/// 声明队列和绑定
 		/// </summary>
 		/// <param name="channel">信道</param>
+		/// <param name="exchange">交换机</param>
 		/// <param name="queueName">队列名称</param>
 		/// <param name="routingKey">路由规则</param>
 		/// <returns></returns>
-		public async Task DeclareQueueAndBindAsync(IChannel channel,string queueName,string routingKey)
+		private async Task DeclareQueueAndBindAsync(IChannel channel,QueueConfig queueConfig)
 		{
+			Dictionary<string, object> args = new Dictionary<string, object>();
+			args["x-retry-count"] = 0;
+			args["isUseDeadLetter"] = queueConfig.UseDeadLetter;//是否使用死信队列
+			if (!string.IsNullOrEmpty(_config.DeadLetterExchange))
+			{
+				args["x-dead-letter-exchange"] = _config.DeadLetterExchange;
+			}
+			if (!string.IsNullOrEmpty(queueConfig.DLRoutingKey))
+			{
+				args["x-dead-letter-routing-key"] = queueConfig.DLRoutingKey;
+			}
+
 			//声明订单队列（作用:是消息的“暂存地”,等着对应的消费者来取任务处理,一个队列可以有多个消费者一起取任务处理) 如果这个队列不存在 → 创建它,如果已经存在 → 直接用
 			await channel.QueueDeclareAsync(
-				queueName, //订单队列队列名
+				queueConfig.QueueName, //订单队列队列名
 				durable: true, //不持久化 → 重启后队列消失
 				exclusive: false, //不独占 → 其他连接也能用 
 				autoDelete: false, //不自动删除 → 即使没消费者也不删
-				arguments: null);//无额外参数(它允许你为队列（或交换机、绑定）添加额外的、自定义的配置参数，就像给队列“贴标签”或“加插件”。)
+				arguments: args);//无额外参数(它允许你为队列（或交换机、绑定）添加额外的、自定义的配置参数，就像给队列“贴标签”或“加插件”。)
+
+			_logger.LogInformation("rabbitMQ 成功声明队列,队列名:{param}", queueConfig.QueueName);
 
 			//绑定队列-定规则，队列愿意接收什么样的消息， 意思是：“请把交换机x 中 routingKey = '规则x' 的消息，转发到 队列x”
 			await channel.QueueBindAsync(
-				queueName,  //队列名
-				_exchangeName,// //交换机名
-			    routingKey);//路由规则 
+				queueConfig.QueueName,  //队列名
+				_config.MainExchange,// //交换机名
+			    queueConfig.RoutingKey);//路由规则 
+
+			_logger.LogInformation("rabbitMQ 队列成功绑定交换机,交换机:{exchange},队列:{queue},规则:{routingKey}", _config.MainExchange, queueConfig.QueueName, queueConfig.RoutingKey);
+
+			//声明死信队列
+			await channel.QueueDeclareAsync(
+				queueConfig.DeadLetterQueueName, 
+				durable: true, 
+				exclusive: false, 
+				autoDelete: false, 
+				arguments: null);
+
+			_logger.LogInformation("rabbitMQ 成功声明死信队列,死信队列名:{queue}", queueConfig.DeadLetterQueueName);
+
+			//死信队列绑定规则
+			await channel.QueueBindAsync(
+				queueConfig.DeadLetterQueueName,  //队列名
+				_config.DeadLetterExchange,// //交换机名
+				queueConfig.DLRoutingKey);//路由规则 
+			_logger.LogInformation("rabbitMQ 死信队列成功绑定交换机,死信交换机:{exchange},死信队列:{queue},规则:{routingKey}", _config.DeadLetterExchange, queueConfig.DeadLetterQueueName, queueConfig.DLRoutingKey);
 		}
 
 		/// <summary>
 		/// 释放资源
 		/// </summary>
-
 		public async ValueTask DisposeAsync()
 		{
 			if (_connection != null)
 			{
 				try
 				{
-					await _connection.CloseAsync();
-					_logger.LogInformation("RabbitMQ连接已关闭!");
+					if (_connection.IsOpen)
+					{
+						await _connection.CloseAsync();
+						_logger.LogInformation("RabbitMQ连接已关闭!");
+					} 
+					
 					await _connection.DisposeAsync();
 					_logger.LogInformation("RabbitMQ连接已销毁!");
 				}
 				catch (Exception ex)
 				{
 					_logger.LogWarning(ex, "关闭连接时出错");
+				}
+				finally
+				{
+					_connection = null; //防止后续误用
+					_isInitialized = false;
 				}
 			}
 		}
