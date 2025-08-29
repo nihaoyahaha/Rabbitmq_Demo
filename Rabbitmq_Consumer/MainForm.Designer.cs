@@ -34,12 +34,14 @@
 			this.listBox_InventoryMessages = new System.Windows.Forms.ListBox();
 			this.btn_ReceiveMessage = new System.Windows.Forms.Button();
 			this.btn_StopReceiveMessage = new System.Windows.Forms.Button();
+			this.pictureBox1 = new System.Windows.Forms.PictureBox();
+			((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
 			this.SuspendLayout();
 			// 
 			// label1
 			// 
 			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(13, 35);
+			this.label1.Location = new System.Drawing.Point(12, 9);
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size(101, 12);
 			this.label1.TabIndex = 1;
@@ -50,7 +52,7 @@
 			this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(669, 35);
+			this.label2.Location = new System.Drawing.Point(12, 287);
 			this.label2.Name = "label2";
 			this.label2.Size = new System.Drawing.Size(101, 12);
 			this.label2.TabIndex = 1;
@@ -60,16 +62,16 @@
 			// 
 			this.listBox_OrderMessages.FormattingEnabled = true;
 			this.listBox_OrderMessages.ItemHeight = 12;
-			this.listBox_OrderMessages.Location = new System.Drawing.Point(15, 53);
+			this.listBox_OrderMessages.Location = new System.Drawing.Point(14, 27);
 			this.listBox_OrderMessages.Name = "listBox_OrderMessages";
-			this.listBox_OrderMessages.Size = new System.Drawing.Size(570, 244);
+			this.listBox_OrderMessages.Size = new System.Drawing.Size(560, 244);
 			this.listBox_OrderMessages.TabIndex = 2;
 			// 
 			// listBox_InventoryMessages
 			// 
 			this.listBox_InventoryMessages.FormattingEnabled = true;
 			this.listBox_InventoryMessages.ItemHeight = 12;
-			this.listBox_InventoryMessages.Location = new System.Drawing.Point(671, 53);
+			this.listBox_InventoryMessages.Location = new System.Drawing.Point(14, 305);
 			this.listBox_InventoryMessages.Name = "listBox_InventoryMessages";
 			this.listBox_InventoryMessages.Size = new System.Drawing.Size(560, 244);
 			this.listBox_InventoryMessages.TabIndex = 2;
@@ -77,7 +79,7 @@
 			// btn_ReceiveMessage
 			// 
 			this.btn_ReceiveMessage.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.btn_ReceiveMessage.Location = new System.Drawing.Point(15, 316);
+			this.btn_ReceiveMessage.Location = new System.Drawing.Point(14, 597);
 			this.btn_ReceiveMessage.Name = "btn_ReceiveMessage";
 			this.btn_ReceiveMessage.Size = new System.Drawing.Size(99, 23);
 			this.btn_ReceiveMessage.TabIndex = 3;
@@ -88,7 +90,7 @@
 			// btn_StopReceiveMessage
 			// 
 			this.btn_StopReceiveMessage.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.btn_StopReceiveMessage.Location = new System.Drawing.Point(15, 354);
+			this.btn_StopReceiveMessage.Location = new System.Drawing.Point(164, 597);
 			this.btn_StopReceiveMessage.Name = "btn_StopReceiveMessage";
 			this.btn_StopReceiveMessage.Size = new System.Drawing.Size(99, 23);
 			this.btn_StopReceiveMessage.TabIndex = 3;
@@ -96,11 +98,22 @@
 			this.btn_StopReceiveMessage.UseVisualStyleBackColor = true;
 			this.btn_StopReceiveMessage.Click += new System.EventHandler(this.btn_StopReceiveMessage_Click);
 			// 
+			// pictureBox1
+			// 
+			this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.pictureBox1.Location = new System.Drawing.Point(608, 27);
+			this.pictureBox1.Name = "pictureBox1";
+			this.pictureBox1.Size = new System.Drawing.Size(487, 522);
+			this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+			this.pictureBox1.TabIndex = 4;
+			this.pictureBox1.TabStop = false;
+			// 
 			// MainForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(1253, 389);
+			this.ClientSize = new System.Drawing.Size(1130, 685);
+			this.Controls.Add(this.pictureBox1);
 			this.Controls.Add(this.btn_StopReceiveMessage);
 			this.Controls.Add(this.btn_ReceiveMessage);
 			this.Controls.Add(this.listBox_InventoryMessages);
@@ -110,6 +123,7 @@
 			this.Name = "MainForm";
 			this.ShowIcon = false;
 			this.Text = "消息消费者";
+			((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -122,6 +136,7 @@
 		private System.Windows.Forms.ListBox listBox_InventoryMessages;
 		private System.Windows.Forms.Button btn_ReceiveMessage;
 		private System.Windows.Forms.Button btn_StopReceiveMessage;
+		private System.Windows.Forms.PictureBox pictureBox1;
 	}
 }
 

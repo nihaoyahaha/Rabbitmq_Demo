@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Runtime.Remoting.Channels;
 using System.Text;
@@ -34,6 +36,7 @@ namespace Rabbitmq_Producer
 			LoadRoutingKeys();
 		}
 
+		//发送文本
 		private async void btn_send_Click(object sender, EventArgs e)
 		{
 			try
@@ -66,6 +69,54 @@ namespace Rabbitmq_Producer
 			if (cmb_RoutingKey.Items.Count > 0) cmb_RoutingKey.SelectedIndex = 0;
 		}
 
+		//发送图片
+		private async void btn_sendPicture_Click(object sender, EventArgs e)
+		{
+			try
+			{
+				byte[] messageBodyBytes = ConvertImageToByteArray();
+				await _producer.PublishAsync(messageBodyBytes, cmb_RoutingKey.Text);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.ToString());
+				throw;
+			}
+		}
 
+		private byte[] ConvertImageToByteArray()
+		{
+			using (MemoryStream ms = new MemoryStream())
+			{
+				pictureBox1.Image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+				return ms.ToArray();
+			}
+		}
+
+		private void btn_openFile_Click(object sender, EventArgs e)
+		{
+			OpenFileDialog openFileDialog = new OpenFileDialog
+			{
+				Filter = "PNG Image|*.png|All Files|*.*",
+				Title = "打开图片"
+			};
+
+			if (openFileDialog.ShowDialog() == DialogResult.OK)
+			{
+				try
+				{
+					using (Bitmap tempBitmap = new Bitmap(openFileDialog.FileName))
+					{
+						pictureBox1.Image = new Bitmap(tempBitmap);
+					}
+
+				}
+				catch (Exception ex)
+				{
+					MessageBox.Show($"无法加载图像：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				}
+			}
+		}
 	}
+	
 }
