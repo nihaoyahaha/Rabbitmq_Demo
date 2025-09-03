@@ -19,6 +19,8 @@ namespace RabbitMQ_Helper
 
 		//初始化Rabbitmq连接
 		Task CreateConnectionAsync();
-
+		
+		//是否启用死信队列
+		bool IsUseDeadLetter(string routingKey);
 	}
 }

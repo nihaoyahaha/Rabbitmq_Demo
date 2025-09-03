@@ -20,7 +20,8 @@ namespace RabbitMQ_Helper.Consumer
 		private bool _isConsuming = false;
 		//消息消费失败最多重试次数
 		private const int _maxRetries = 3;
-
+		//当前是第几次重试
+		private int _currentRetry = 0;
 		public event Func<byte[], ulong, Task<bool>> MessageReceived;
 
 		public EventingBasicConsumer(ILogger<EventingBasicConsumer> logger, IRabbitMQInitializer rabbitInitializer)
@@ -104,9 +105,6 @@ namespace RabbitMQ_Helper.Consumer
 			{
 				if (MessageReceived == null) return;
 
-				//获取当前重试次数
-				int retryCount = GetRetryCount(headers);
-
 				// 调用客户端事件处理器处理业务逻辑
 				bool success = await MessageReceived?.Invoke(body, deliveryTag);
 				if (success)
@@ -118,34 +116,22 @@ namespace RabbitMQ_Helper.Consumer
 				else
 				{
 					// 处理失败 → 决定是否重试
-					await HandleFailedMessage(retryCount, deliveryTag, eventArgs.BasicProperties);
-					_logger.LogWarning("消息处理失败，已 NACK (重回队列), DeliveryTag: {Tag}", deliveryTag);
+					await HandleFailedMessage(deliveryTag, eventArgs.BasicProperties);
 				}
 			}
 			catch (Exception ex)
 			{
-				int retryCount = GetRetryCount(eventArgs.BasicProperties.Headers);
-				_logger.LogError(ex, "处理消息时发生异常，重试次数: {RetryCount}, DeliveryTag: {Tag}", retryCount, deliveryTag);
+				_logger.LogError(ex, "处理消息时发生异常，重试次数: {RetryCount}, DeliveryTag: {Tag}", _currentRetry, deliveryTag);
 
-				await HandleFailedMessage(retryCount, deliveryTag, eventArgs.BasicProperties);
+				await HandleFailedMessage(deliveryTag, eventArgs.BasicProperties);
 			}
 		
 		}
 
-		private int GetRetryCount(IDictionary<string, object> headers)
-		{
-			if (headers != null &&
-				headers.TryGetValue("x-retry-count", out var value) &&
-				value is int count)
-			{
-				return count;
-			}
-			return 0; // 第一次消费
-		}
 
-		private async Task HandleFailedMessage(int currentRetryCount, ulong deliveryTag, IReadOnlyBasicProperties properties)
+		private async Task HandleFailedMessage(ulong deliveryTag, IReadOnlyBasicProperties properties)
 		{
-			bool isUseDeadLetter = bool.Parse(properties.Headers["UseDeadLetter"].ToString());
+			bool isUseDeadLetter = bool.Parse(properties.Headers["x-use-dead-letter"].ToString());
 			//不启用死信队列时，消息重回队列
 			if (!isUseDeadLetter)
 			{  await _channel.BasicNackAsync(
@@ -154,11 +140,8 @@ namespace RabbitMQ_Helper.Consumer
 			  	requeue: true);
 				return;
 			}
-			int nextRetryCount = currentRetryCount + 1;
-
-			properties.Headers["x-retry-count"] = nextRetryCount;
-
-			if (nextRetryCount < _maxRetries)
+			_currentRetry++;
+			if (_currentRetry <= _maxRetries)
 			{
 				// 重试中：重回队列
 				await _channel.BasicNackAsync(
@@ -167,7 +150,7 @@ namespace RabbitMQ_Helper.Consumer
 					requeue: true //重回队列
 				);
 
-				_logger.LogWarning("消息处理失败，第 {RetryCount} 次重试，将重回队列，DeliveryTag: {Tag}", nextRetryCount, deliveryTag);
+				_logger.LogWarning("消息处理失败，第 {RetryCount} 次重试，将重回队列，DeliveryTag: {Tag}", _currentRetry, deliveryTag);
 			}
 			else
 			{
@@ -177,7 +160,7 @@ namespace RabbitMQ_Helper.Consumer
 					multiple: false,
 					requeue: false // ❌ 不重回队列 → 触发死信机制
 				);
-
+				_currentRetry = 0;
 				_logger.LogError("消息处理失败，已达到最大重试次数 {MaxRetries}，将进入死信队列，DeliveryTag: {Tag}", _maxRetries, deliveryTag);
 			}
 		}

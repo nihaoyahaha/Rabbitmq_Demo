@@ -2,6 +2,7 @@
 using RabbitMQ.Client;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -29,6 +30,8 @@ namespace RabbitMQ_Helper
 		/// 死信交换机名
 		/// </summary>
 		public string DeadLetterExchangeName => _config.DeadLetterExchange;
+
+		public RabbitMQConfig Config => _config;
 
 		public RabbitMQInitializer(RabbitMQConfig config, ILogger<RabbitMQInitializer> logger)
 		{
@@ -232,8 +235,6 @@ namespace RabbitMQ_Helper
 		private async Task DeclareQueueAndBindAsync(IChannel channel,QueueConfig queueConfig)
 		{
 			Dictionary<string, object> args = new Dictionary<string, object>();
-			args["x-retry-count"] = 0;
-			args["isUseDeadLetter"] = queueConfig.UseDeadLetter;//是否使用死信队列
 			if (!string.IsNullOrEmpty(_config.DeadLetterExchange))
 			{
 				args["x-dead-letter-exchange"] = _config.DeadLetterExchange;
@@ -277,6 +278,18 @@ namespace RabbitMQ_Helper
 				_config.DeadLetterExchange,// //交换机名
 				queueConfig.DLRoutingKey);//路由规则 
 			_logger.LogInformation("rabbitMQ 死信队列成功绑定交换机,死信交换机:{exchange},死信队列:{queue},规则:{routingKey}", _config.DeadLetterExchange, queueConfig.DeadLetterQueueName, queueConfig.DLRoutingKey);
+		}
+
+		/// <summary>
+		/// 该队列是否启用死信队列
+		/// </summary>
+		/// <param name="routingKey"></param>
+		/// <returns></returns>
+		public bool IsUseDeadLetter(string routingKey)
+		{
+			var queue = _config.Queues.FirstOrDefault(x => x.RoutingKey == routingKey);
+			if (queue == null) return false;
+			return queue.UseDeadLetter;
 		}
 
 		/// <summary>

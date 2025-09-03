@@ -102,7 +102,7 @@ namespace Rabbitmq_Consumer
 				}
 				return true;
 			}
-			catch
+			catch(Exception ex)
 			{
 				return false;
 			}

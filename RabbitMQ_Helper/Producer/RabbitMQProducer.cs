@@ -33,7 +33,7 @@ namespace RabbitMQ_Helper
 					//注册处理无法路由的消息的事件
 					channel.BasicReturnAsync += BasicReturnAsync;
 
-					BasicProperties props = CreateBasicProperties(messageId);
+					BasicProperties props = CreateBasicProperties(messageId,routingKey);
 
 					await channel.BasicPublishAsync(
 						exchange: _rabbitInitializer.MainExchangeName,
@@ -56,7 +56,7 @@ namespace RabbitMQ_Helper
 		}
 
 		//设置消息属性
-		private BasicProperties CreateBasicProperties(string messageId)
+		private BasicProperties CreateBasicProperties(string messageId,string routingKey)
 		{
             /*
               设置消息属性 IBasicProperties
@@ -89,9 +89,7 @@ namespace RabbitMQ_Helper
 
 			//发消息带“自定义头”（Headers）
 			props.Headers = new Dictionary<string, object>() {
-						{ "latitude", 51.5252949 },
-						{"longitude", -0.0905493 },
-						{ "Test", "TestData"}
+						{"x-use-dead-letter", _rabbitInitializer.IsUseDeadLetter(routingKey) },
 					};
 
 			return props;
