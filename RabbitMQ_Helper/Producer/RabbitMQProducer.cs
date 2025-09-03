@@ -85,7 +85,9 @@ namespace RabbitMQ_Helper
 			props.Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
 
 			//设置消息过期时间（TTL）单位:毫秒,1分钟 = 60000毫秒
-			//_props.Expiration = "60000"; // 1分钟过期
+			// 消息在队列中等待时开始倒计时，超时后若配置了死信交换机（DLX），
+			// RabbitMQ 会自动将其路由到死信队列。
+			props.Expiration = "300000"; // 5分钟过期
 
 			//发消息带“自定义头”（Headers）
 			props.Headers = new Dictionary<string, object>() {
